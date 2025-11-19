@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
-VisualStudioVersion = 17.14.36623.8 d17.14
+VisualStudioVersion = 17.14.36623.8
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Domain", "Domain\Domain.csproj", "{0D1E2B04-7A7E-4351-9AF1-033BC61581B7}"
 EndProject
@@ -10,8 +10,6 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Business", "Business\Business.csproj", "{4056BD44-43F9-4CBD-8B67-E19EF91F163A}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ContaminaDOS.Api", "ContaminaDOS.Api\ContaminaDOS.Api.csproj", "{5621DF83-AAD5-43D0-BBB2-9C0B80CDDB42}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Controllers", "Controllers\Controllers.csproj", "{050641DB-C31D-465F-A07A-AD0524A07927}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -35,10 +33,6 @@ Global
 		{5621DF83-AAD5-43D0-BBB2-9C0B80CDDB42}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5621DF83-AAD5-43D0-BBB2-9C0B80CDDB42}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5621DF83-AAD5-43D0-BBB2-9C0B80CDDB42}.Release|Any CPU.Build.0 = Release|Any CPU
-		{050641DB-C31D-465F-A07A-AD0524A07927}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{050641DB-C31D-465F-A07A-AD0524A07927}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{050641DB-C31D-465F-A07A-AD0524A07927}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{050641DB-C31D-465F-A07A-AD0524A07927}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
