@@ -1,5 +1,6 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using ContaminaDOS.Business;
+﻿using ContaminaDOS.Business;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
 
 namespace ContaminaDOS.Api.Controllers
 {
@@ -73,5 +74,39 @@ namespace ContaminaDOS.Api.Controllers
                 });
             }
         }
+
+        // PUT /api/games/{gameId}/
+        [HttpPut("{gameId}")]
+        public async Task<IActionResult> JoinGame(
+            string gameId,
+            [FromHeader(Name = "player"), BindRequired] string playerHeader,
+            [FromHeader(Name = "password")] string? passwordHeader)
+        {
+            try
+            {
+                var game = await _business.JoinGameAsync(gameId, playerHeader, passwordHeader);
+
+                return Ok(new ApiResponse
+                {
+                    status = 200,
+                    msg = "Joined Game",
+                    data = game,
+                    others = new { }
+                });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new ApiResponse
+                {
+                    status = 400,
+                    msg = ex.Message,
+                    data = new { },
+                    others = new { }
+                });
+            }
+        }
+
+
+
     }
 }

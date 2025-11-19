@@ -33,5 +33,34 @@ namespace ContaminaDOS.Business
 
             return game;
         }
+
+
+        public async Task<Game> JoinGameAsync(string gameId, string player, string? password)
+        {
+            // Busca el juego
+            var game = await _data.GetByIdAsync(gameId);
+            if (game == null)
+                throw new Exception("Game not found");
+
+            // Si tiene password pero no enviaron password
+            if (game.Password && string.IsNullOrWhiteSpace(password))
+                throw new Exception("Unauthorized");
+
+            // Si ya está el jugador en la partida
+            if (game.Players.Contains(player))
+                throw new Exception("Player already in game");
+
+            // Agrega el jugador
+            game.Players.Add(player);
+            game.UpdatedAt = DateTime.UtcNow;
+
+            // Guarda los cambios
+            await _data.UpdateAsync(game.Id, game);
+
+            return game;
+        }
+
+
+
     }
 }

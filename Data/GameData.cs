@@ -21,5 +21,32 @@ namespace ContaminaDOS.Data
         {
             return await _games.Find(g => g.Name == name).FirstOrDefaultAsync();
         }
+
+        public async Task<Game?> GetByIdAsync(string id)
+        {
+            return await _games.Find(g => g.Id == id).FirstOrDefaultAsync();
+        }
+
+        public async Task UpdateAsync(string id, Game game)
+        {
+            await _games.ReplaceOneAsync(g => g.Id == id, game);
+        }
+
+
+        public async Task AddPlayerAsync(string gameId, string player)
+        {
+            var update = Builders<Game>.Update
+                .AddToSet(g => g.Players, player)
+                .Set(g => g.UpdatedAt, DateTime.UtcNow);
+
+            await _games.UpdateOneAsync(g => g.Id == gameId, update);
+        }
+
+        public async Task<bool> PlayerExistsAsync(string gameId, string player)
+        {
+            var game = await GetByIdAsync(gameId);
+            return game != null && game.Players.Contains(player);
+        }
+
     }
 }
