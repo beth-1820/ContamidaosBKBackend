@@ -48,5 +48,22 @@ namespace ContaminaDOS.Data
             return game != null && game.Players.Contains(player);
         }
 
+        public async Task<List<Game>> SearchGamesAsync(string? name, string? status, int page, int limit)
+        {
+            var filter = Builders<Game>.Filter.Empty;
+
+            if (!string.IsNullOrWhiteSpace(name))
+                filter &= Builders<Game>.Filter.Regex(g => g.Name, new MongoDB.Bson.BsonRegularExpression(name, "i"));
+
+            if (!string.IsNullOrWhiteSpace(status))
+                filter &= Builders<Game>.Filter.Eq(g => g.Status, status);
+
+            return await _games.Find(filter)
+                               .Skip(page)
+                               .Limit(limit)
+                               .ToListAsync();
+        }
+
+
     }
 }

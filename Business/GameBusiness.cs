@@ -60,7 +60,10 @@ namespace ContaminaDOS.Business
             return game;
         }
 
-
+        public async Task<List<Game>> SearchGamesAsync(string? name, string? status, int page, int limit)
+        {
+            return await _data.SearchGamesAsync(name, status, page, limit);
+        }
 
     }
 }

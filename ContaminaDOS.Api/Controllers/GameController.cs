@@ -1,14 +1,23 @@
 ﻿using ContaminaDOS.Business;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
+using System.Text.Json.Serialization;
 
 namespace ContaminaDOS.Api.Controllers
 {
     [ApiController]
     [Route("api/games")]
+
     public class GamesController : ControllerBase
     {
         private readonly GameBusiness _business;
+        [JsonConverter(typeof(JsonStringEnumConverter))]
+        public enum GameStatus
+        {
+            lobby,
+            rounds,
+            ended
+        }
 
         public GamesController(GameBusiness business)
         {
@@ -105,6 +114,45 @@ namespace ContaminaDOS.Api.Controllers
                 });
             }
         }
+
+        [HttpGet]
+        [HttpGet]
+        public async Task<IActionResult> SearchGames(
+            [FromQuery] string? name,
+            [FromQuery] GameStatus? status,
+            [FromQuery] int page = 0,
+            [FromQuery] int limit = 50)
+        {
+            var games = await _business.SearchGamesAsync(
+                name,
+                status?.ToString(),
+                page,
+                limit
+            );
+
+            var result = games.Select(g => new
+            {
+                name = g.Name,
+                owner = g.Owner,
+                status = g.Status,
+                createdAt = g.CreatedAt,
+                updatedAt = g.UpdatedAt,
+                password = g.Password,
+                players = g.Players,
+                enemies = g.Enemies,
+                currentRound = g.CurrentRound,
+                id = g.Id
+            });
+
+            return Ok(new ApiResponse
+            {
+                status = 200,
+                msg = $"Search returned {games.Count} result",
+                data = result,
+                others = new { }
+            });
+        }
+
 
 
 
