@@ -64,6 +64,12 @@ namespace ContaminaDOS.Data
                                .ToListAsync();
         }
 
+        public async Task<Game?> GetGameByIdAsync(string id)
+        {
+            var filter = Builders<Game>.Filter.Eq("_id", id);
+            return await _games.Find(filter).FirstOrDefaultAsync();
+        }
+
 
     }
 }

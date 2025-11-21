@@ -154,6 +154,98 @@ namespace ContaminaDOS.Api.Controllers
         }
 
 
+        // GET /api/games/{gameId}/
+        [HttpGet("{gameId}")]
+        public async Task<IActionResult> GetGame(
+            string gameId,
+            [FromHeader] string? password,
+            [FromHeader, BindRequired] string player)
+        {
+            var game = await _business.GetGameByIdAsync(gameId);
+            if (game == null)
+            {
+                return NotFound(new
+                {
+                    msg = "The specified resource was not found",
+                    status = 404
+                });
+            }
+
+            if (game.Password == true && string.IsNullOrEmpty(password))
+            {
+                return Unauthorized(new
+                {
+                    msg = "Invalid credentials",
+                    status = 401
+                });
+            }
+
+            if (!game.Players.Contains(player))
+            {
+                return StatusCode(403, new
+                {
+                    msg = "Not part of the game",
+                    status = 403
+                });
+            }
+
+            var enemiesList = new List<string>();
+            if (game.Enemies.Contains(player))
+                enemiesList.Add(player);
+
+            return Ok(new
+            {
+                status = 200,
+                msg = "Game Found",
+                data = new
+                {
+                    name = game.Name,
+                    owner = game.Owner,
+                    status = game.Status,
+                    createdAt = game.CreatedAt,
+                    updatedAt = game.UpdatedAt,
+                    password = game.Password,
+                    players = game.Players,
+                    enemies = enemiesList,
+                    currentRound = game.CurrentRound,
+                    id = gameId
+                }
+            });
+        }
+
+        [HttpHead("{gameId}/start")]
+        public async Task<IActionResult> StartGame(
+        string gameId,
+        [FromHeader(Name = "password")] string? passwordHeader,
+        [FromHeader(Name = "player"), BindRequired] string playerHeader)
+        {
+            try
+            {
+                await _business.StartGameAsync(gameId, playerHeader, passwordHeader);
+                return Ok();
+            }
+            catch (KeyNotFoundException ex)
+            {
+                Response.Headers.Add("X-msg", ex.Message);
+                return NotFound();
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                Response.Headers.Add("X-msg", ex.Message);
+                return Unauthorized();
+            }
+            catch (InvalidOperationException ex)
+            {
+                Response.Headers.Add("X-msg", ex.Message);
+                return StatusCode(428);
+            }
+            catch (Exception ex)
+            {
+                Response.Headers.Add("X-msg", ex.Message);
+                return Conflict();
+            }
+        }
+
 
 
     }
