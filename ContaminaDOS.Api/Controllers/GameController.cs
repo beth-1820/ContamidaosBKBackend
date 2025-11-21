@@ -79,8 +79,8 @@ namespace ContaminaDOS.Api.Controllers
         [HttpPut("{gameId}")]
         public async Task<IActionResult> JoinGame(
             string gameId,
-            [FromHeader(Name = "player"), BindRequired] string playerHeader,
-            [FromHeader(Name = "password")] string? passwordHeader)
+            [FromHeader(Name = "password")] string? passwordHeader,
+            [FromHeader(Name = "player"), BindRequired] string playerHeader)
         {
             try
             {
