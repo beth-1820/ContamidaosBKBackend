@@ -12,6 +12,7 @@ namespace ContaminaDOS.Data
             _games = db.GetCollection<Game>("games");
         }
 
+
         public async Task InsertAsync(Game game)
         {
             await _games.InsertOneAsync(game);
@@ -33,27 +34,14 @@ namespace ContaminaDOS.Data
         }
 
 
-        public async Task AddPlayerAsync(string gameId, string player)
-        {
-            var update = Builders<Game>.Update
-                .AddToSet(g => g.Players, player)
-                .Set(g => g.UpdatedAt, DateTime.UtcNow);
-
-            await _games.UpdateOneAsync(g => g.Id == gameId, update);
-        }
-
-        public async Task<bool> PlayerExistsAsync(string gameId, string player)
-        {
-            var game = await GetByIdAsync(gameId);
-            return game != null && game.Players.Contains(player);
-        }
-
         public async Task<List<Game>> SearchGamesAsync(string? name, string? status, int page, int limit)
         {
             var filter = Builders<Game>.Filter.Empty;
 
             if (!string.IsNullOrWhiteSpace(name))
-                filter &= Builders<Game>.Filter.Regex(g => g.Name, new MongoDB.Bson.BsonRegularExpression(name, "i"));
+                filter &= Builders<Game>.Filter.Regex(
+                    g => g.Name,
+                    new MongoDB.Bson.BsonRegularExpression(name, "i"));
 
             if (!string.IsNullOrWhiteSpace(status))
                 filter &= Builders<Game>.Filter.Eq(g => g.Status, status);
@@ -70,6 +58,19 @@ namespace ContaminaDOS.Data
             return await _games.Find(filter).FirstOrDefaultAsync();
         }
 
+        public async Task AddPlayerAsync(string gameId, string player)
+        {
+            var update = Builders<Game>.Update
+                .AddToSet(g => g.Players, player)
+                .Set(g => g.UpdatedAt, DateTime.UtcNow);
 
+            await _games.UpdateOneAsync(g => g.Id == gameId, update);
+        }
+
+        public async Task<bool> PlayerExistsAsync(string gameId, string player)
+        {
+            var game = await GetByIdAsync(gameId);
+            return game != null && game.Players.Contains(player);
+        }
     }
 }

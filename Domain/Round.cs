@@ -1,5 +1,4 @@
-﻿using MongoDB.Bson;
-using MongoDB.Bson.Serialization.Attributes;
+﻿using MongoDB.Bson.Serialization.Attributes;
 
 namespace ContaminaDOS.Domain
 {
@@ -19,5 +18,9 @@ namespace ContaminaDOS.Domain
         public List<string> Group { get; set; } = new();
 
         public List<bool> Votes { get; set; } = new();
+
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+        public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
     }
 }

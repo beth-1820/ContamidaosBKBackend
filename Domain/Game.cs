@@ -8,8 +8,7 @@ namespace ContaminaDOS.Domain
     {
         [BsonId]
         [BsonRepresentation(BsonType.ObjectId)]
-        [JsonIgnore]
-        public string Id { get; set; }
+        public string Id { get; set; } = string.Empty;
 
         public string Name { get; set; } = string.Empty;
 
@@ -28,5 +27,7 @@ namespace ContaminaDOS.Domain
         public List<string> Enemies { get; set; } = new();
 
         public string CurrentRound { get; set; } = "0000000000000000000000000";
+
+        public List<Round> Rounds { get; set; } = new();
     }
 }
