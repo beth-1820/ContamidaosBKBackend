@@ -54,9 +54,10 @@ namespace ContaminaDOS.Data
 
         public async Task<Game?> GetGameByIdAsync(string id)
         {
-            var filter = Builders<Game>.Filter.Eq("_id", id);
-            return await _games.Find(filter).FirstOrDefaultAsync();
+            // Más seguro: buscar por la propiedad Id mapeada
+            return await _games.Find(g => g.Id == id).FirstOrDefaultAsync();
         }
+
 
         public async Task AddPlayerAsync(string gameId, string player)
         {

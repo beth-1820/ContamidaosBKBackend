@@ -19,6 +19,9 @@ namespace ContaminaDOS.Domain
 
         public List<bool> Votes { get; set; } = new();
 
+        public int FailedVotes { get; set; } = 0;
+        public List<bool> ActionVotes { get; set; } = new();
+
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;

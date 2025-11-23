@@ -26,8 +26,11 @@ namespace ContaminaDOS.Domain
 
         public List<string> Enemies { get; set; } = new();
 
-        public string CurrentRound { get; set; } = "0000000000000000000000000";
+        public string CurrentRound { get; set; } = "000000000000000000000000";
 
         public List<Round> Rounds { get; set; } = new();
+
+        public Dictionary<string, List<string>> PsychopathsByPlayer { get; set; } = new();
+
     }
 }

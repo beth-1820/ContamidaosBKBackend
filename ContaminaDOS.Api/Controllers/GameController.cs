@@ -143,7 +143,7 @@ namespace ContaminaDOS.Api.Controllers
             }
         }
 
-    
+
         // GET /api/games  (Game Search)
 
         [HttpGet]
@@ -184,21 +184,21 @@ namespace ContaminaDOS.Api.Controllers
                     others = new { }
                 });
             }
-            catch
+            catch (Exception ex)
             {
                 return BadRequest(new ApiResponse
                 {
                     status = 400,
-                    msg = "Client Error",
-                    data = new { },
+                    msg = ex.Message, // importante para debug
+                    data = { },
                     others = new { }
                 });
             }
         }
 
-  
+
         // GET /api/games/{gameId} (Game Get)
- 
+
         [HttpGet("{gameId}")]
         public async Task<IActionResult> GetGame(
             string gameId,
@@ -344,9 +344,9 @@ namespace ContaminaDOS.Api.Controllers
             }
         }
 
-    
+
         // HEAD /api/games/{gameId}/start  (Game Start)
- 
+
         [HttpHead("{gameId}/start")]
         public async Task<IActionResult> StartGame(
             string gameId,
@@ -438,7 +438,7 @@ namespace ContaminaDOS.Api.Controllers
             }
         }
 
- 
+
         // GET /api/games/{gameId}/rounds/{roundId}  (Round Get)
 
         [HttpGet("{gameId}/rounds/{roundId}")]
@@ -492,7 +492,7 @@ namespace ContaminaDOS.Api.Controllers
         }
 
         // PATCH /api/games/{gameId}/rounds/{roundId} (Propose group)
-   
+
         [HttpPatch("{gameId}/rounds/{roundId}")]
         public async Task<IActionResult> ProposeGroup(
             string gameId,
@@ -660,9 +660,9 @@ namespace ContaminaDOS.Api.Controllers
             }
         }
 
-      
+
         // PUT /api/games/{gameId}/rounds/{roundId} (Action)
- 
+
         [HttpPut("{gameId}/rounds/{roundId}")]
         public async Task<IActionResult> SubmitAction(
             string gameId,
