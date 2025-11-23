@@ -128,20 +128,83 @@ namespace ContaminaDOS.Business
         public async Task StartGameAsync(string gameId, string player, string? password)
         {
             var game = await _data.GetByIdAsync(gameId);
+
             if (game == null)
                 throw new KeyNotFoundException("Game not found.");
 
-            ValidateGamePassword(game, password);
-            ValidateGameOwnership(game, player);
-            ValidateGameStartConditions(game);
+            // Si tiene password, exigimos que venga algo
+            if (game.Password && string.IsNullOrWhiteSpace(password))
+                throw new UnauthorizedAccessException("Unauthorized: Incorrect password.");
 
-            // Asignación de roles
-            AssignRoles(game);
+            // Solo el owner puede iniciar
+            if (!string.Equals(game.Owner, player, StringComparison.OrdinalIgnoreCase))
+                throw new UnauthorizedAccessException("Forbidden: Player not part of the game.");
 
-            // Crear primera ronda (Década 1)
-            InitializeFirstRound(game);
+            // Ya empezó
+            if (game.Status != "lobby")
+                throw new Exception("Game already started.");
+
+            // Mínimo 5 jugadores
+            if (game.Players.Count < 5)
+                throw new InvalidOperationException("Need 5 players to start.");
+
+            // Máximo 10 jugadores
+            if (game.Players.Count > 10)
+                throw new InvalidOperationException("Game cannot exceed 10 players.");
+
+            // -----------------------------
+            //   ASIGNACIÓN DE ROLES
+            // -----------------------------
+            if (!_roleDistribution.ContainsKey(game.Players.Count))
+                throw new Exception("Unsupported players count for role distribution.");
+
+            var playersShuffled = game.Players.OrderBy(x => Guid.NewGuid()).ToList();
+            int numPsychos = _roleDistribution[game.Players.Count].psicopatas;
+            var psicopatas = playersShuffled.Take(numPsychos).ToList();
+
+            // Guardar enemigos (psicópatas) - CORREGIDO: ahora guardamos todos los psicópatas
+            game.Enemies = psicopatas;
+
+            // -----------------------------
+            //   CREAR PRIMERA RONDA (DÉCADA 1)
+            // -----------------------------
+            game.Status = "rounds";
+
+            var firstRound = new Round
+            {
+                Leader = game.Owner,
+                Status = "waiting-on-leader",
+                Result = "none",
+                Phase = "vote1",
+                Group = new List<string>(),
+                Votes = new List<bool>(),
+                // aseguramos nuevos contenedores
+                ActionVotes = new List<bool>(),
+                FailedVotes = 0,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            };
+
+            game.Rounds.Add(firstRound);
+            game.CurrentRound = firstRound.Id;
+            game.UpdatedAt = DateTime.UtcNow;
 
             await _data.UpdateAsync(game.Id, game);
+        }
+
+        // NUEVO MÉTODO: Obtener psicópatas visibles para un jugador específico
+        public async Task<List<string>> GetVisibleEnemiesAsync(string gameId, string currentPlayer)
+        {
+            var game = await _data.GetByIdAsync(gameId);
+            if (game == null)
+                throw new KeyNotFoundException("Game not found");
+
+            // Si el jugador actual NO es psicópata, no puede ver a ningún psicópata
+            if (!game.Enemies.Contains(currentPlayer))
+                return new List<string>();
+
+            // Si el jugador actual ES psicópata, puede ver a los otros psicópatas (excluyéndose a sí mismo)
+            return game.Enemies.Where(enemy => enemy != currentPlayer).ToList();
         }
 
         public async Task<(Game game, List<Round> rounds)> GetRoundsAsync(string gameId)
@@ -480,5 +543,24 @@ namespace ContaminaDOS.Business
             
             await _data.UpdateAsync(game.Id, game);
         }
+
+        private void PopulateEnemiesForPlayer(Game game, string player)
+        {
+            if (game.PsychopathsByPlayer == null || game.PsychopathsByPlayer.Count == 0)
+            {
+                game.Enemies = new List<string>();
+                return;
+            }
+
+            if (game.PsychopathsByPlayer.ContainsKey(player))
+            {
+                game.Enemies = game.PsychopathsByPlayer[player];
+            }
+            else
+            {
+                game.Enemies = new List<string>();
+            }
+        }
+
     }
 }

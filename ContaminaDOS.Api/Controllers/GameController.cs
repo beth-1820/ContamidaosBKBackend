@@ -233,8 +233,9 @@ namespace ContaminaDOS.Api.Controllers
                 });
             }
 
+            // Versión más simple - SOLO para testing
             var enemiesList = game.Enemies.Contains(player)
-                ? new List<string> { player }
+                ? game.Enemies  // ← MOSTRAR TODOS los psicópatas (incluyéndose)
                 : new List<string>();
 
             return Ok(new
