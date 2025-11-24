@@ -47,10 +47,11 @@ namespace ContaminaDOS.Data
                 filter &= Builders<Game>.Filter.Eq(g => g.Status, status);
 
             return await _games.Find(filter)
-                               .Skip(page)
+                               .Skip(page * limit)
                                .Limit(limit)
                                .ToListAsync();
         }
+
 
         public async Task<Game?> GetGameByIdAsync(string id)
         {
