@@ -192,21 +192,6 @@ namespace ContaminaDOS.Business
             await _data.UpdateAsync(game.Id, game);
         }
 
-        // NUEVO MÉTODO: Obtener psicópatas visibles para un jugador específico
-        public async Task<List<string>> GetVisibleEnemiesAsync(string gameId, string currentPlayer)
-        {
-            var game = await _data.GetByIdAsync(gameId);
-            if (game == null)
-                throw new KeyNotFoundException("Game not found");
-
-            // Si el jugador actual NO es psicópata, no puede ver a ningún psicópata
-            if (!game.Enemies.Contains(currentPlayer))
-                return new List<string>();
-
-            // Si el jugador actual ES psicópata, puede ver a los otros psicópatas (excluyéndose a sí mismo)
-            return game.Enemies.Where(enemy => enemy != currentPlayer).ToList();
-        }
-
         public async Task<(Game game, List<Round> rounds)> GetRoundsAsync(string gameId)
         {
             var game = await _data.GetByIdAsync(gameId);
