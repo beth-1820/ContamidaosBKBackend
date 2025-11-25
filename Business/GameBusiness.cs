@@ -77,11 +77,11 @@ namespace ContaminaDOS.Business
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow,
                 Status = STATUS_LOBBY,
-                CurrentRound = "000000000000000000000000", // sentinel: 24 ceros
+                CurrentRound = "000000000000000000000000", 
                 Rounds = new List<Round>()
             };
 
-            // Forzar Id para compatibilidad con MongoDB
+           
             if (string.IsNullOrWhiteSpace(game.Id))
             {
                 game.Id = ObjectId.GenerateNewId().ToString();
@@ -152,9 +152,8 @@ namespace ContaminaDOS.Business
             if (game.Players.Count > 10)
                 throw new InvalidOperationException("Game cannot exceed 10 players.");
 
-            // -----------------------------
             //   ASIGNACIÓN DE ROLES
-            // -----------------------------
+ 
             if (!_roleDistribution.ContainsKey(game.Players.Count))
                 throw new Exception("Unsupported players count for role distribution.");
 
@@ -162,12 +161,11 @@ namespace ContaminaDOS.Business
             int numPsychos = _roleDistribution[game.Players.Count].psicopatas;
             var psicopatas = playersShuffled.Take(numPsychos).ToList();
 
-            // Guardar enemigos (psicópatas) - CORREGIDO: ahora guardamos todos los psicópatas
+           //guardamos todos los psicópatas
             game.Enemies = psicopatas;
 
-            // -----------------------------
+        
             //   CREAR PRIMERA RONDA (DÉCADA 1)
-            // -----------------------------
             game.Status = "rounds";
 
             var firstRound = new Round
@@ -224,7 +222,7 @@ namespace ContaminaDOS.Business
 
             ValidateGroupProposal(game, round, group);
 
-            // Establecer propuesta (fase de votación)
+            // Establece propuesta (fase de votación)
             round.Leader = leader;
             round.Group = group;
             round.Status = ROUND_STATUS_VOTING;
@@ -245,11 +243,11 @@ namespace ContaminaDOS.Business
             ValidatePlayerInGame(game, player);
             ValidateVotingPhase(round);
 
-            // Guardar voto de propuesta
+            // Guarda voto de propuesta
             round.Votes.Add(vote);
             round.UpdatedAt = DateTime.UtcNow;
 
-            // Si ya votaron todos, resolver la propuesta
+            // Si ya votaron todos, resuelve la propuesta
             if (round.Votes.Count == game.Players.Count)
             {
                 await ResolveProposalVote(game, round);
@@ -273,7 +271,7 @@ namespace ContaminaDOS.Business
             ValidateActionSubmission(game, player, action);
             ValidateGroupActionPhase(round);
 
-            // Registrar voto de acción
+            // Registra voto de acción
             round.ActionVotes ??= new List<bool>();
             round.ActionVotes.Add(action);
             round.UpdatedAt = DateTime.UtcNow;
@@ -414,7 +412,7 @@ namespace ContaminaDOS.Business
             // Mayoría simple (approvals > rejections) => aprueba
             if (approvals > rejections)
             {
-                // Propuesta aceptada -> pasar a fase de acción del grupo
+                // Propuesta aceptada pasar a fase de acción del grupo
                 round.Status = ROUND_STATUS_WAITING_GROUP;
                 round.Phase = PHASE_ACTION;
                 round.ActionVotes = new List<bool>();
@@ -423,23 +421,27 @@ namespace ContaminaDOS.Business
             }
             else
             {
-                // Propuesta rechazada -> incrementar intentos fallidos
+                // Propuesta rechazada incrementar intentos fallidos
                 round.FailedVotes = (round.FailedVotes < int.MaxValue) ? round.FailedVotes + 1 : round.FailedVotes;
 
-                // Si falla 3 veces -> la década es perdida (punto para psicópatas)
+                // Si falla 3 veces la década es perdida (punto para psicópatas)
                 if (round.FailedVotes >= 3)
                 {
                     round.Result = RESULT_ENEMIES;
                     round.Status = ROUND_STATUS_ENDED;
                     round.Phase = PHASE_VOTE1_ENDED;
-                    
+
+                    game.UpdatedAt = DateTime.UtcNow;
+                    round.UpdatedAt = DateTime.UtcNow;
                     await _data.UpdateAsync(game.Id, game);
-                    await NextRoundAsync(game.Id);
+
+                    //comprueba si el juego debe terminar
+                    await CheckGameEndOrNextRoundAsync(game);
                     return;
                 }
                 else
                 {
-                    // Permitir al líder proponer nuevamente
+                    // Permite al líder proponer nuevamente
                     round.Status = ROUND_STATUS_WAITING_LEADER;
                     round.Phase = PHASE_VOTE1;
                     round.Group = new List<string>();
@@ -452,18 +454,43 @@ namespace ContaminaDOS.Business
             await _data.UpdateAsync(game.Id, game);
         }
 
+
         private async Task EvaluateGroupActions(Game game, Round round)
         {
+            // Determina el resultado de la ronda
             round.Result = round.ActionVotes.Any(v => !v) ? RESULT_ENEMIES : RESULT_CITIZENS;
             round.Status = ROUND_STATUS_ENDED;
             round.Phase = PHASE_ACTION_ENDED;
-            
+
+            round.UpdatedAt = DateTime.UtcNow;
             game.UpdatedAt = DateTime.UtcNow;
             await _data.UpdateAsync(game.Id, game);
 
-            // Avanzar a la siguiente ronda o terminar el juego
-            await NextRoundAsync(game.Id);
+            // comprueba si el juego debe terminar
+            await CheckGameEndOrNextRoundAsync(game);
         }
+
+        private async Task CheckGameEndOrNextRoundAsync(Game game)
+        {
+            int sabotageCount = game.Rounds.Count(r => r.Result == RESULT_ENEMIES);
+            int cleanCount = game.Rounds.Count(r => r.Result == RESULT_CITIZENS);
+            int finishedRounds = game.Rounds.Count(r => r.Status == ROUND_STATUS_ENDED);
+
+            // Terminar si:
+            //  - alguien llega a 3 victorias
+            //  - o ya se jugaron 5 rondas
+            if (sabotageCount >= 3 || cleanCount >= 3 || finishedRounds >= 5)
+            {
+                await EndGameAsync(game);
+            }
+            else
+            {
+                await NextRoundAsync(game.Id);
+            }
+        }
+
+
+
 
         public async Task<(Game game, Round newRound)> NextRoundAsync(string gameId)
         {
@@ -480,7 +507,7 @@ namespace ContaminaDOS.Business
 
             int nextDecadeIndex = game.Rounds.Count;
 
-            // Si ya se jugaron 5 décadas → finalizar juego
+            // Si ya se jugaron 5 décadas finalizar juego
             if (nextDecadeIndex >= 5)
             {
                 await EndGameAsync(game);
@@ -498,10 +525,22 @@ namespace ContaminaDOS.Business
 
         private Round CreateNextRound(Game game, Round lastRound)
         {
-            // Rotación del líder
-            int leaderIndex = game.Players.IndexOf(lastRound.Leader);
-            if (leaderIndex < 0) leaderIndex = 0; // fallback
-            string nextLeader = game.Players[(leaderIndex + 1) % game.Players.Count];
+            // líder aleatorio diferente al anterior
+            Random rng = new Random();
+            string nextLeader;
+
+            // Si es la primera ronda o no hay líder previo
+            if (lastRound == null || string.IsNullOrEmpty(lastRound.Leader))
+            {
+                nextLeader = game.Players[rng.Next(game.Players.Count)];
+            }
+            else
+            {
+                // Lista de jugadores excepto el líder anterior
+                var candidates = game.Players.Where(p => p != lastRound.Leader).ToList();
+                nextLeader = candidates[rng.Next(candidates.Count)];
+            }
+
 
             return new Round
             {
@@ -520,12 +559,9 @@ namespace ContaminaDOS.Business
 
         private async Task EndGameAsync(Game game)
         {
-            int sabotageCount = game.Rounds.Count(r => r.Result == RESULT_ENEMIES);
-            int cleanCount = game.Rounds.Count(r => r.Result == RESULT_CITIZENS);
-            
-            game.Status = sabotageCount >= 3 ? STATUS_ENDED_PSYCHOPATHS_WIN : STATUS_ENDED_CITIZENS_WIN;
+            game.Status = "ended";  
             game.UpdatedAt = DateTime.UtcNow;
-            
+
             await _data.UpdateAsync(game.Id, game);
         }
 
