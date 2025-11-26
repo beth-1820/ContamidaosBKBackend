@@ -4,11 +4,12 @@ using MongoDB.Driver;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Add services to the container
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-
+// MongoDB configuration
 builder.Services.AddSingleton<IMongoDatabase>(sp =>
 {
     var client = new MongoClient(builder.Configuration["MongoDb:ConnectionString"]);
@@ -18,6 +19,7 @@ builder.Services.AddSingleton<IMongoDatabase>(sp =>
 builder.Services.AddScoped<GameData>();
 builder.Services.AddScoped<GameBusiness>();
 
+// CORS
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll", policy =>
@@ -30,14 +32,18 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
+// Enable Swagger ALWAYS (Development + Production)
+app.UseSwagger();
+app.UseSwaggerUI();
 
-//app.UseHttpsRedirection();
-app.UseAuthorization();
+// app.UseHttpsRedirection();
+
 app.UseCors("AllowAll");
+app.UseAuthorization();
+
 app.MapControllers();
+
+// Root endpoint to avoid 404 on /
+app.MapGet("/", () => "API ContaminaDOS funcionando correctamente ??");
+
 app.Run();
